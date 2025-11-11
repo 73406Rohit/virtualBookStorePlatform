@@ -36,8 +36,8 @@ A Spring Boot based backend for a Virtual Book Store application featuring JWT s
 
 ## Setup
 
-1. Clone the repository:  
-   https://github.com/Rohitarote2000/virtualBookStorePlatform.git
+1. Clone the repository:
+   https://github.com/73406Rohit/virtualBookStorePlatform.git
 
 
                           
