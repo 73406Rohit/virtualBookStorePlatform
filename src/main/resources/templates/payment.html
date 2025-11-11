@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Make Payment - Virtual Book Store</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: "Segoe UI", Arial, sans-serif;
+        }
+        .payment-container {
+            max-width: 440px;
+            margin: 5rem auto;
+            padding: 2rem;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 24px rgb(0 0 0 / 12%);
+            text-align: center;
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 28px;
+            font-size: 18px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<div class="payment-container">
+    <h2>Order Payment</h2>
+
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <div th:if="${paymentResponse != null}">
+        <p><strong>Order ID:</strong> <span th:text="${paymentResponse.order.id}"></span></p>
+        <p><strong>Amount:</strong> ₹<span th:text="${paymentResponse.order.total}"></span></p>
+        <p><strong>Status:</strong> <span th:text="${paymentResponse.payment.status}"></span></p>
+        <button id="payBtn">Pay Now</button>
+    </div>
+
+    <div th:if="${paymentResponse == null}">
+        <form method="get" action="/payment" class="mt-3">
+            <input type="text" name="orderId" class="form-control mb-3" placeholder="Enter Order ID" required />
+            <button type="submit">Load Payment Details</button>
+        </form>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+        let payResponseExists = [[${paymentResponse != null}]];
+        if (payResponseExists) {
+            const options = {
+                key: /*[[${paymentResponse.razorpayKeyId}]]*/,
+                amount: /*[[${paymentResponse.payment.amount}]]*/ * 100,
+                currency: 'INR',
+                name: 'Virtual Book Store',
+                description: 'Order #' + /*[[${paymentResponse.order.id}]]*/,
+                order_id: /*[[${paymentResponse.payment.razorpayOrderId}]]*/,
+                handler: function (response) {
+                    fetch('/api/payments/update-status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            status: 'PAID'
+                        }),
+                    }).then(resp => {
+                        if (resp.ok) {
+                            alert('Payment successful!');
+                            window.location.href = '/orderSuccess?orderId=' + /*[[${paymentResponse.order.id}]]*/;
+                        } else {
+                            alert('Payment verification failed!');
+                        }
+                    });
+                },
+                prefill: {
+                    name: "Book Lover",
+                    email: "bookstore@example.com",
+                    contact: "9999999999"
+                },
+                theme: { color: "#007bff" }
+            };
+
+            document.getElementById('payBtn').onclick = function(e) {
+                e.preventDefault();
+                const rzp = new Razorpay(options);
+                rzp.open();
+            };
+        }
+    /*]]>*/
+</script>
+</body>
+</html>
